@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <iostream>
 #include <ctime>
+#include <Eigen/Core>
+#include <Eigen/LU>
 
 using namespace cv;
 /**
@@ -18,40 +20,42 @@ using namespace cv;
  */
 int main( int argc, char* argv[] )
 {
-  cv::Mat T2( 3, 3, CV_32FC1);
-  cv::Mat s( 3, 3, CV_32FC1);
-  s.at<float>(0,0) = 0.00260383;   s.at<float>(0,1) = 0;   s.at<float>(0,2) = 0; 
-  s.at<float>(1,0) = 0 ;   s.at<float>(1,1) = 0.00260383;   s.at<float>(1,2) = 0; 
-  s.at<float>(2,0) = 0 ;   s.at<float>(2,1) = 0 ;   s.at<float>(2,2) = 1; 
+   /** Hard-coded M from last part */
+  Eigen::MatrixXd M(3,4);
+  Eigen::MatrixXd T3(4,4);
+  Eigen::MatrixXd Q(3,3);
+  Eigen::VectorXd m4(3);
+  Eigen::VectorXd C_hat(3);
+  Eigen::VectorXd C(3);
 
-  cv::Mat c( 3, 3, CV_32FC1);
-  c.at<float>(0,0) = 1;   c.at<float>(0,1) = 0;   c.at<float>(0,2) = -558.95; 
-  c.at<float>(1,0) = 0 ;   c.at<float>(1,1) = 1;  c.at<float>(1,2) = -325.6; 
-  c.at<float>(2,0) = 0 ;   c.at<float>(2,1) = 0;  c.at<float>(2,2) = 1.0; 
+  /** Divide it */
+  M(0,0) = -0.178551; M(0,1) = 0.503064;  M(0,2) = 0.0118979; M(0,3) = 0.0132528;
+  M(1,0) = 0.0870779;  M(1,1) = 0.0209005;  M(1,2) = 0.527983; M(1,3) = 0.027439;
+  M(2,0) = -0.27146; M(2,1) = -0.132166; M(2,2) = 0.0673299; M(2,3) =  -0.575759;
 
-  gemm( s, c, 1, cv::Mat::zeros(3,3, CV_32FC1), 0, T2 );
-  std::cout<< s << std::endl;
-  std::cout<< c << std::endl;
-  std::cout<< T2 << std::endl;
+  Q = M.block<3,3>(0,0);
+  m4 = M.block<3,1>(0,3);
 
-/*
-  cv::Mat p( 3, 3, CV_32FC1);
-  p.at<float>(0,0) = -0.458;   p.at<float>(0,1) = 0.2995;   p.at<float>(0,2) = 0.014; 
-  p.at<float>(1,0) = 0.051 ;   p.at<float>(1,1) = 0.055;   p.at<float>(1,2) = 0.541; 
-  p.at<float>(2,0) = -0.109 ;   p.at<float>(2,1) = -0.178 ;   p.at<float>(2,2) = 0.044; 
+  /** T3: */
+  T3.row(0) << 0.283844, 0, 0, -87.7714;
+  T3.row(1) << 0, 0.283844, 0, -87.8424;
+  T3.row(2) << 0, 0, 0.283844, -8.37431;
+  T3.row(3) << 0, 0, 0,  1;
 
-  cv::Mat pinv(3,3, CV_32FC1);
+  C_hat = Q.inverse()*m4;
 
-  std::cout << p << std::endl;
-  pinv = p.inv();
+  Eigen::VectorXd C_hatH(4);
+  C_hatH << C_hat(0), C_hat(1), C_hat(2), 1; 
+  C = T3.inverse()*C_hatH;
 
-  std::cout<< " Pinv: " << std::endl;
-  std::cout << pinv << std::endl;
+  std::cout<< "M: \n" << M<< std::endl;
+  std::cout<< "Q: \n" << Q<< std::endl;
+  std::cout<< "m4 : \n" << m4 << std::endl;
 
-  p = p.inv();
-  std::cout<< " P inverted in same matrix: " << std::endl;
-  std::cout << p << std::endl;
-   return 0; 
-*/
+  std::cout<< "T3 : \n" << T3 << std::endl;
+  std::cout<< "T3 inv : \n" << T3.inverse() << std::endl;
+  std::cout<< "C hat: \n" << C_hat << std::endl;
+  std::cout<< "C: \n" << C << std::endl;
+
 }
 

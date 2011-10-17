@@ -9,8 +9,7 @@ include_directories( .
 
 set (CMAKE_CXX_FLAGS "-L /usr/local/lib" )
 
-set ( SRC_FILES proj3-1-4
-                 )
+set ( SRC_FILES proj3-1-4.cpp )
 set ( OpenCV_LIBS opencv_core
                   opencv_highgui
                   opencv_calib3d 

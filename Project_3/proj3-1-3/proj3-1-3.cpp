@@ -104,6 +104,8 @@ int main( int argc, char* argv[] )
    std::cout<< " Min residual value: " << storedResidual[minInd] << std::endl;
    std::cout<< " Matrix M: \n" << storedM[minInd] << std::endl;
 
+   std::cout<< " Matrix T2: \n" << T2 << std::endl;
+   std::cout<< " Matrix T3: \n" << T3 << std::endl;
 
    return 0; 
 }
