@@ -1,6 +1,6 @@
 /**
- * @file proj3-1-1.cpp
- * @brief usage: ./proj3-1-1 pts2d-pic_a.txt pts3d.txt
+ * @file proj3-1-4.cpp
+ * @brief usage: ./proj3-1-4 
  * @author A. Huaman
  * @date 2011-10-17
  */
