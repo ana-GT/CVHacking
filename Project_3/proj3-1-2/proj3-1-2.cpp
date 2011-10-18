@@ -50,8 +50,8 @@ int main( int argc, char* argv[] )
     std::cout << "* Mapped point: " << Eigen::Vector2d( p2d(0), p2d(1)) << std::endl;
     std::cout << "* Residual: " << residual << std::endl;
     std::cout << "* Mod: " << modresidual << std::endl;
- 
-/*
+/* 
+
    /// Normalize 
    normalizePoints2D( argv[1], T2, points2D, normPoints2D );
    normalizePoints3D( argv[2], T3, points3D, normPoints3D );  
@@ -67,8 +67,8 @@ int main( int argc, char* argv[] )
    std::cout<< "M_SVD: \n" << M_SVD << std::endl;
 
    Residual( M_SVD, points2D, points3D, normPoints2D, normPoints3D, T2 );
-*/
 
+*/
    return 0; 
 }
 
