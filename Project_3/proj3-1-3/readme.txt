@@ -1,3 +1,10 @@
+Observations:
+
+1. With K = 8, the residuals are generally higher than for K = 12 or K = 15. This is somewhat expected since we are fitting fewer points, hence the expression is less accurate.
+2. With K = 12 the residuals gets smaller, same case for K = 15. However, once in a while an outlier appears( check Trial [17] with K = 12 with a big residual compared to others)
+3. I found that running the trials multiple times vary the matrix M, but only slightly. The min residual varies accordingly (based on my observation between 0.45 - 1.2 approx). 
+
+
 Trial [0] -- K: 8 Residual: 1.764431 
 Trial [1] -- K: 8 Residual: 4.055505 
 Trial [2] -- K: 8 Residual: 3.216198 
