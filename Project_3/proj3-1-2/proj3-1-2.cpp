@@ -26,7 +26,7 @@ int main( int argc, char* argv[] )
    if( argc < 3 )
    { printf("Error. Give me two files with 2D and 3D Points \n"); return 1; }
 
-/*
+
    /// DEBUG
 
    /// Least Squares Method 
@@ -36,14 +36,27 @@ int main( int argc, char* argv[] )
 
    /// SVD 
    calculateM_SVD( argv[1], argv[2], M_SVD );
-   std::cout<< "M_SVD: \n" << M_SVD << std::endl;
-*/
+   std::cout<< "M_SVD: \n" << M_SVD << std::endl;  
 
-   /** Normalize */
+   /// For the last element
+    Eigen::VectorXd p2d = M_SVD*Eigen::Vector4d( 1.2323, 1.4421, 0.4506, 1);
+    p2d(0) = p2d(0) / p2d(2);
+    p2d(1) = p2d(1) / p2d(2);
+
+
+    Eigen::Vector2d residual( p2d(0) - 0.1406, p2d(1)  - -0.4527 );
+    double modresidual = residual.norm();
+
+    std::cout << "* Mapped point: " << Eigen::Vector2d( p2d(0), p2d(1)) << std::endl;
+    std::cout << "* Residual: " << residual << std::endl;
+    std::cout << "* Mod: " << modresidual << std::endl;
+ 
+/*
+   /// Normalize 
    normalizePoints2D( argv[1], T2, points2D, normPoints2D );
    normalizePoints3D( argv[2], T3, points3D, normPoints3D );  
 
-   /** Find Matrix */
+   /// Find Matrix 
    calculateM_LSS( normPoints2D, normPoints3D, M_LSS );
 
    /// LSS
@@ -54,7 +67,7 @@ int main( int argc, char* argv[] )
    std::cout<< "M_SVD: \n" << M_SVD << std::endl;
 
    Residual( M_SVD, points2D, points3D, normPoints2D, normPoints3D, T2 );
-
+*/
 
    return 0; 
 }

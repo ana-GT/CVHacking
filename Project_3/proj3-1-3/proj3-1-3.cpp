@@ -79,8 +79,8 @@ int main( int argc, char* argv[] )
       storedK.push_back( k );    
    }
 
-   //-- 3. k = 16 t = 4
-   k = 16; t = 4; 
+   //-- 3. k = 15 t = 5
+   k = 15; t = 5; 
    for( unsigned int i = 0; i < num_trials; i++ )
    {
       solveQuestion3( k, t, N, points2D, points3D, T2, T3, sum_res, M );
@@ -106,6 +106,10 @@ int main( int argc, char* argv[] )
 
    std::cout<< " Matrix T2: \n" << T2 << std::endl;
    std::cout<< " Matrix T3: \n" << T3 << std::endl;
+
+   /** Check residual */
+   std::vector<Eigen::VectorXd> residual;
+   Residual( storedM[minInd], points2D, points3D, normPoints2D, normPoints3D, T2, residual );
 
    return 0; 
 }
@@ -138,6 +142,24 @@ void solveQuestion3( int k, int t, int N, std::vector<Eigen::VectorXi> _points2D
   
    pickRandom( k, randomK, t, test, N ); 
 
+   printf(" K: ");
+   for( unsigned int i = 0; i < k; i++ )
+   { printf(" %d ", randomK[i] ); }
+
+   printf("\n  test: ");
+   for( unsigned int i = 0; i < t; i++ )
+   { printf(" %d ", test[i] ); }
+   printf("\n");
+
+   pointsK2D.resize(0);
+   pointsK3D.resize(0);
+   pointsTest2D;
+   pointsTest3D;
+
+   normPointsK2D.resize(0);
+   normPointsK3D.resize(0);
+   normPointsTest2D.resize(0);
+   normPointsTest3D.resize(0);
 
    /** Separate the sets */
    for( unsigned int i = 0; i < k; i++ )

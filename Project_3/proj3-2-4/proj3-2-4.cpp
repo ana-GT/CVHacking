@@ -93,6 +93,10 @@ int main( int argc, char* argv[] )
   Fa = T2a.transpose()*Fhr2a*T2b; /** We see points in image a */
   Fb = T2b.transpose()*Fhr2b*T2a; /** We see points in image b */
 
+  std::cout <<"Fa: \n" << Fa << std::endl;
+  std::cout <<"Fb: \n" << Fb << std::endl;
+
+
   /** Find lines */
   int N = points2Db.size();
 
