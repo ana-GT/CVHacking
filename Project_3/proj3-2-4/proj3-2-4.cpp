@@ -74,14 +74,14 @@ int main( int argc, char* argv[] )
 
   /** Check normalized error */
   std::cout <<"Normalized errors: " << std::endl;
-
+/*
   for( int i = 0; i < points2Da.size(); i++ )
   {
      Eigen::VectorXd normResa = Eigen::Vector3d( normPoints2Da[i](0), normPoints2Da[i](1),1).transpose()*Fha*Eigen::Vector3d(normPoints2Db[i](0), normPoints2Db[i](1), 1);
      Eigen::VectorXd normResb = Eigen::Vector3d( normPoints2Db[i](0), normPoints2Db[i](1),1).transpose()*Fhb*Eigen::Vector3d(normPoints2Da[i](0), normPoints2Da[i](1), 1);
      std::cout<<" [" << i<<"] Error a: " << normResa(0) << " Error b: "<< normResb(0)  << std::endl;
   }
-
+*/
   /** Reduce to rank 2 -- the wonderful SVD... */
   reduceRank2( Fha, Fhr2a );
   reduceRank2( Fhb, Fhr2b );
@@ -114,9 +114,12 @@ int main( int argc, char* argv[] )
      lb = Fb*Eigen::Vector3d( (double)points2Da[i](0), (double)points2Da[i](1), 1 );
      linesa.push_back( la );
      linesb.push_back( lb );
+     std::cout << "[" << i <<"] la: " << la(0) << "," << la(1) << "," << la(2) << std::endl;
+     std::cout << "[" << i <<"] lb: " << lb(0) << "," << lb(1) << "," << lb(2) << std::endl;
   }
 
-/* /// DEBUGGING
+ /// DEBUGGING
+/*
   /// Checking
   for( unsigned int i = 0; i < N; i++ )
   {
@@ -154,6 +157,9 @@ int main( int argc, char* argv[] )
      double ymin = (-linesa[i](0)*xmin  -linesa[i](2))/linesa[i](1);
      
      pointsa.push_back( Eigen::Vector4d( xmin, ymin, xmax, ymax ) );
+   
+     std::cout << "PA: ["<<i<<"]  min: " << xmin << "," << ymin << "-- max: " << xmax << " , " <<ymax << std::endl;
+
   }
 
   for( unsigned int i = 0; i < N; i++ )
@@ -165,6 +171,9 @@ int main( int argc, char* argv[] )
      double ymin = (-linesb[i](0)*xmin  -linesb[i](2))/linesb[i](1);
      
      pointsb.push_back( Eigen::Vector4d( xmin, ymin, xmax, ymax ) );
+
+     std::cout << "PB: ["<<i<<"]  min: " << xmin << " , " << ymin << "-- max: " << xmax << " , " <<ymax << std::endl;
+
   }
 
   /** Show images */  
