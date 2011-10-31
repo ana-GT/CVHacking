@@ -35,8 +35,10 @@ class Gradient {
   cv::Mat GetImageGradientXX();
   cv::Mat GetImageGradientYY();
   cv::Mat GetImageHarris();
+  cv::Mat GetImageSuppressed();
+  cv::Mat GetImageThresholded();
 
-  std::vector<cv::Point> GetHarrisPoints( int _thresh, int _radius );
+  std::vector<cv::Point2f> GetHarrisPoints( int _thresh, int _radius );
   void Thresholding( const cv::Mat &_img, cv::Mat &_thresholded );
   void Suppression( const cv::Mat &_img, cv::Mat &_suppressed );
 
@@ -44,8 +46,8 @@ class Gradient {
   double mRadius;
   double mCoeff;
   cv::Mat mHarrisThresh;
-  std::vector<cv::Point>mThreshPoints;
-  std::vector<cv::Point> mHarrisPoints;
+  std::vector<cv::Point2f>mThreshPoints;
+  std::vector<cv::Point2f> mHarrisPoints;
 
   private:
   cv::Mat GetGradientX();

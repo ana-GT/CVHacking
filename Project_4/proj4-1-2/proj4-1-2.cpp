@@ -9,7 +9,7 @@
 char* windowHarris = "Harris image";
 
 cv::Mat img_harris;
-int thresh = 80;
+int thresh = 9;
 int maxThresh = 100;
 Gradient g;
 

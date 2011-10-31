@@ -237,14 +237,14 @@ cv::Mat Gradient::GetHarris( double _coeff )
 /**
  * @function GetHarrisPoints
  */
-std::vector<cv::Point> Gradient::GetHarrisPoints( int _thresh, int _radius )
+std::vector<cv::Point2f> Gradient::GetHarrisPoints( int _thresh, int _radius )
 {
    mThresh = _thresh; /** 0-255 */
    mRadius = _radius; /** 3, 11? */
    // You should have called getImageHarris previously
    Thresholding( mImageHarris, mImageThresholded );
    Suppression( mImageThresholded, mImageSuppressed );
-
+  
    return mHarrisPoints;
 }
 
@@ -255,15 +255,15 @@ std::vector<cv::Point> Gradient::GetHarrisPoints( int _thresh, int _radius )
 void Gradient::Thresholding( const cv::Mat &_img, cv::Mat &_thresholded )
 {
    // Thresholding
+//   cv::threshold( _img, _thresholded, mThresh, 255, cv::THRESH_TOZERO ); 
    cv::threshold( _img, _thresholded, mThresh, 255, cv::THRESH_TOZERO ); 
-
    // Saving points
    mThreshPoints.resize(0);
    for( unsigned int j = 0; j < mRows; j++ )
    {  for( unsigned int i = 0; i < mCols; i++ )
       {
          if( _thresholded.at<uchar>(j,i) != 0 )
-         { mThreshPoints.push_back(cv::Point(i,j)); }
+         { mThreshPoints.push_back(cv::Point2f(i,j)); }
       }
    }
  
@@ -277,32 +277,43 @@ void Gradient::Suppression( const cv::Mat &_img, cv::Mat &_suppressed )
 {
    cv::Mat w;
    uchar minVal; uchar maxVal;
+   int maxIndX; int maxIndY;
+   int minIndX; int minIndY;
+
+   _suppressed = _img.clone();
 
    for( unsigned int j = 0; j < mRows - mRadius; j++ )
    {  for( unsigned int i = 0; i < mCols - mRadius; i++ )
       {
-         maxVal = 0; minVal = 255;
+         maxVal = (uchar)mThresh; minVal = 255;
 
          /// Find  min and max
-         for( unsigned int n = 0; n < mRadius; n++ )
-         {  for( unsigned int m = 0; m < mRadius; m++ )
-            {  if( _img.at<uchar>( j+n, i+m ) > maxVal )
-               { maxVal = _img.at<uchar>(j+n, i+m); }
-               if( _img.at<uchar>(j+n,i+m) < minVal )
-               { minVal = _img.at<uchar>(j+n,i+m); }
+         for( int n = mRadius; n >= -mRadius; n-- )
+         {  for( int m = mRadius; m >= -mRadius; m-- )
+            {  
+               int im = i + m; int jn = j + n;
+               if( im < 0 || im >= mCols || jn < 0 || jn >= mRows )
+               {  continue; }
+
+               if( _suppressed.at<uchar>( jn, im ) >= maxVal )
+               { maxVal = _suppressed.at<uchar>(jn, im); maxIndX = im; maxIndY = jn; }
+               if( _suppressed.at<uchar>(jn,im) < minVal )
+               { minVal = _suppressed.at<uchar>(jn, im); minIndX = im; minIndY = jn;  }
             }
          }
 
          /// Suppress!
-         for( unsigned int n = 0; n < mRadius; n++ )
-         {  for( unsigned int m = 0; m < mRadius; m++ )
-            {  if( _img.at<uchar>( j+n, i+m ) >= maxVal && maxVal != minVal )
-               { _suppressed.at<uchar>(j+n,i+m) = 255; }
-               else
-               { _suppressed.at<uchar>(j+n,i+m) = 0; }
+         for( int n = -mRadius; n <= mRadius; n++ )
+         {  for( int m = -mRadius; m <= mRadius; m++ )
+            {  
+               int im = i + m; int jn = j + n;
+               if( im < 0 || im >= mCols || jn < 0 || jn >= mRows )
+               {  continue; }
+               _suppressed.at<uchar>( jn, im ) = 0;               
             }
          }
-
+         /// Keep the max value
+         _suppressed.at<uchar>( maxIndY, maxIndX ) = maxVal;
       }
    }
 
@@ -311,11 +322,12 @@ void Gradient::Suppression( const cv::Mat &_img, cv::Mat &_suppressed )
    for( unsigned int j = 0; j < mRows; j++ )
    {  for( unsigned int i = 0; i < mCols; i++ )
       {
-         if( _suppressed.at<uchar>(j,i) == 255 )
-         { mHarrisPoints.push_back(cv::Point(i,j)); }
+         if( _suppressed.at<uchar>(j,i) >  0 )
+         { mHarrisPoints.push_back(cv::Point2f(i,j)); }
       }
    }
 }
+
 
 /**
  * @function GetImageGradientX
@@ -539,6 +551,21 @@ cv::Mat Gradient::GetImageHarris()
    return mImageHarris;
 }
 
+/**
+ * @function GetImageSuppressed
+ */
+cv::Mat Gradient::GetImageSuppressed()
+{
+   return mImageSuppressed;
+}
+
+/**
+ * @function GetImageThresholded
+ */
+cv::Mat Gradient::GetImageThresholded()
+{
+   return mImageThresholded;
+}
 
 /**
  * @function GetWindow
