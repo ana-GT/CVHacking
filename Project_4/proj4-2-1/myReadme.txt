@@ -1,13 +1,27 @@
-trans Images
 
-thresh = 160
-radius = 14
+All with coefficient Harris: 0.05
+
+transA
+
+thresh = 132
+radius = 3
+
+Number of points: 176
+
+transB
+thresh = 132
+radius = 3
+
+Number of points: 186
 
 simA Images
-thresh = 125
-radius = 10
+thresh = 90
+radius = 5
+Number of points: 187
 
 simB
 
-thresh = 111
-radius = 13
+thresh = 75
+radius = 5
+
+Number of points: 219 
