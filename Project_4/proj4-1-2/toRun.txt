@@ -1,0 +1,11 @@
+project2-1-transA
+coeff = 0.5 trackbar = 9
+
+project2-1-transB
+coeff = 0.5 -- trackbar = 9
+
+project2-1-simA
+coeff = 0.5 trackbar = 9
+
+project2-1-simB
+coeff = 0.5 -- trackbar = 9
