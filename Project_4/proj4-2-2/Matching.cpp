@@ -40,7 +40,7 @@ void Matching::Init_Pair1( const cv::Mat &_img1,
    cvtColor( mColor1, mPair1, CV_BGR2GRAY );
 
    // Gauss filter
-   cv::GaussianBlur( mPair1, mPair1, cv::Size(3,3),0,0 );
+   cv::GaussianBlur( mPair1, mPair1, cv::Size(5,5),0,0 );
 
    mG1.Init( mPair1 );
 
@@ -100,7 +100,7 @@ void Matching::Init_Pair2( const cv::Mat &_img2,
    cvtColor( mColor2, mPair2, CV_BGR2GRAY );
 
    // Gauss filter
-   cv::GaussianBlur( mPair2, mPair2, cv::Size(3,3),0,0 );
+   cv::GaussianBlur( mPair2, mPair2, cv::Size(5,5),0,0 );
 
    mG2.Init( mPair2 );
 
@@ -145,7 +145,7 @@ void Matching::Init_Pair2( const cv::Mat &_img2,
  */
 void Matching::buildSIFTDescriptor1() {
  
-    cv::SIFT sift( 2.0, true, false );
+    cv::SIFT sift( 1.5, true, false );
     sift( mPair1, cv::Mat(), mKeyPoints1, mDescriptor1, true );
 }
 
@@ -171,15 +171,15 @@ cv::Mat Matching::BruteMatcher() {
   */
   matcher.match( mDescriptor1, mDescriptor2, mMatches );
 
-  double max_dist = 0; double min_dist = 1000;
+  float max_dist = 0; float min_dist = 1000;
 
   //-- Quick calculation of max and min distances between keypoints
   for( int i = 0; i < mDescriptor1.rows; i++ )
-  { double dist = mMatches[i].distance;
+  { float dist = mMatches[i].distance;
     if( dist < min_dist ) min_dist = dist;
     if( dist > max_dist ) max_dist = dist;
   }
-
+  printf("-- Original matches: %d \n", mMatches.size());
   printf("-- Max dist : %f \n", max_dist );
   printf("-- Min dist : %f \n", min_dist );
   
@@ -188,7 +188,7 @@ cv::Mat Matching::BruteMatcher() {
   mGoodMatches.resize(0);
 
   for( int i = 0; i < mDescriptor1.rows; i++ )
-  { if( mMatches[i].distance < 1.5*min_dist )
+  { if( mMatches[i].distance < 1.2*min_dist )
     { mGoodMatches.push_back( mMatches[i]); }
   } 
 

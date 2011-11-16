@@ -13,7 +13,7 @@ Ransac::Ransac() {
     mSimilarity_s = 2;
     mSimilarity_P = 0.99;
 
-    mSimilarity_e = 0.7;
+    mSimilarity_e = 0.95;
 
     mSimilarity_N = (int) ( log( 1 - mSimilarity_P ) / log(1- pow( (1 - mSimilarity_e), mSimilarity_s )) );
     printf("N: %d \n", mSimilarity_N );
@@ -111,7 +111,7 @@ void Ransac::RansacSimilarity( std::vector<cv::KeyPoint> _points1,
         mSample_c = mParam.at<float>( 2,0 );
         mSample_d = mParam.at<float>( 3,0 );
     
-        printf("(!) Random index: %d-%d  Sample a: %f  sample b: %f  sample c: %f  sample d: %f  \n", sampleIndex1, sampleIndex2, mSample_a, mSample_b, mSample_c, mSample_d ); 
+        //printf("(!) Random index: %d-%d  Sample a: %f  sample b: %f  sample c: %f  sample d: %f  \n", sampleIndex1, sampleIndex2, mSample_a, mSample_b, mSample_c, mSample_d ); 
  
         // Calculate outliers
         int count = 2;

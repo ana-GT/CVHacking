@@ -13,7 +13,7 @@ cv::Mat img_corners;
 cv::Mat img;
 cv::Mat imgColor;
 cv::Mat img_harris;
-int thresh = 132;
+int thresh = 117;
 int radius = 3;
 int maxRadius = 20;
 int maxThresh = 255;

@@ -9,3 +9,4 @@ Question 4-1-3
 
 4. Some points that in my opinion are corners do not appear! (for instance the corner of one of the columns in the guy's picture), also one of the square's corners in the robots's chest
 
+NOTE: It is obvious I generated a small number of corners. This is due that otherwise my matches looked pretty bad. Varying the threshold and radius would increase the number of points, but these worked for me.

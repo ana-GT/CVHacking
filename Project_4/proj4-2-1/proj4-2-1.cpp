@@ -27,8 +27,8 @@ int main( int argc, char* argv[] )
    img1 = cv::imread( argv[1], 1 );
    img2 = cv::imread( argv[2], 1 );
 
-   m.Init_Pair1( img1, 0.05, 218, 9 );
-   m.Init_Pair2( img2, 0.05, 218, 9 );
+   m.Init_Pair1( img1, 0.05, 124, 6 );
+   m.Init_Pair2( img2, 0.05, 117, 3 );
 
 
    cv::Mat handy1 = m.DrawOrient1Handy();

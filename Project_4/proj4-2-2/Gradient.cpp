@@ -47,14 +47,14 @@ void Gradient::Init( const cv::Mat &_img )
 
    // Sobel Filter
   mMaskX = cv::Mat( 3, 3, CV_16SC1 );
-  mMaskX.at<short>(0,0) = -1; mMaskX.at<short>(0,1) = 0; mMaskX.at<short>(0,2) = 1;
-  mMaskX.at<short>(1,0) = -2; mMaskX.at<short>(1,1) = 0; mMaskX.at<short>(1,2) = 2;
-  mMaskX.at<short>(2,0) = -1; mMaskX.at<short>(2,1) = 0; mMaskX.at<short>(2,2) = 1;
+  mMaskX.at<short>(0,0) = 0; mMaskX.at<short>(0,1) = 0; mMaskX.at<short>(0,2) = 0;
+  mMaskX.at<short>(1,0) = -1; mMaskX.at<short>(1,1) = 0; mMaskX.at<short>(1,2) = 1;
+  mMaskX.at<short>(2,0) = 0; mMaskX.at<short>(2,1) = 0; mMaskX.at<short>(2,2) = 0;
 
   mMaskY = cv::Mat( 3, 3, CV_16SC1 );
-  mMaskY.at<short>(0,0) = -1; mMaskY.at<short>(0,1) = -2; mMaskY.at<short>(0,2) = -1;
+  mMaskY.at<short>(0,0) =  0; mMaskY.at<short>(0,1) = -1; mMaskY.at<short>(0,2) = 0;
   mMaskY.at<short>(1,0) =  0; mMaskY.at<short>(1,1) =  0; mMaskY.at<short>(1,2) =  0;
-  mMaskY.at<short>(2,0) =  1; mMaskY.at<short>(2,1) =  2; mMaskY.at<short>(2,2) =  1;
+  mMaskY.at<short>(2,0) =  0; mMaskY.at<short>(2,1) =  1; mMaskY.at<short>(2,2) =  0;
 
   // Harris weights
   mWeightH = cv::Mat( 3, 3, CV_16SC1 );

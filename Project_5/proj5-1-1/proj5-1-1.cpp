@@ -30,8 +30,8 @@ int main( int argc, char* argv[] ) {
     GP.resize(4);
     GP[0] = img.clone();
     GP[1] = pyr.Reduce( GP[0], 1*wsize );
-    GP[2] = pyr.Reduce( GP[1], 1*wsize );
-    GP[3] = pyr.Reduce( GP[2], 1*wsize );     
+    GP[2] = pyr.Reduce( GP[1], 2*wsize );
+    GP[3] = pyr.Reduce( GP[2], 4*wsize );     
 
 
     // Write images

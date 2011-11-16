@@ -10,6 +10,8 @@
 
 char* windowMatches = "Matches";
 char* windowConsensus = "Consensus Set";
+char* windowStitched = "Stitched image";
+cv::Mat stitched;
 
 cv::Mat img1;
 cv::Mat img2;
@@ -55,7 +57,21 @@ int main( int argc, char* argv[] )
    imshow( windowConsensus, consensusImage );
 
    imwrite("proj4-3-1.png", consensusImage );
+
+   /// Showing results
+
+   cv::Mat M = cv::Mat( 2, 3, CV_32FC1 );
+   M.at<float>(0,0) = 1; M.at<float>(0,1) = 0; M.at<float>(0,2) = 319;
+   M.at<float>(1,0) = 0; M.at<float>(1,1) = 1; M.at<float>(1,2) = -162;
+   M.at<float>(2,0) = 0; M.at<float>(2,1) = 0; M.at<float>(2,2) = 1;
+
+   cv::Mat dst1 = cv::Mat::zeros( img1.rows, img1.cols, img1.type() );
+   cv::warpAffine( img1, dst1, M, img1.size(), cv::INTER_LINEAR );
+   cv::addWeighted( dst1, 0.5, img2, 0.5, 0.0, stitched );
    
+   cv::namedWindow( windowStitched, CV_WINDOW_NORMAL );
+   imshow( windowStitched, stitched );
+
    cv::waitKey(0);
 
    return 0;

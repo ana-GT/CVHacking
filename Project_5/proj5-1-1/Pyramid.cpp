@@ -30,7 +30,6 @@ cv::Mat Pyramid::Reduce( const cv::Mat &_input, int _windowSize ) {
     }
 
     // Set some values
-    bool colorFlag = false;
     int rows = _input.rows;
     int cols = _input.cols;
     int rows2 = _input.rows / 2;
@@ -38,16 +37,10 @@ cv::Mat Pyramid::Reduce( const cv::Mat &_input, int _windowSize ) {
     int wsize = _windowSize;
     int wsize2 = wsize / 2;
 
-    if( _input.type() == CV_8UC3 ) { colorFlag = true; printf("True color \n");}
-
-    // Create original grayscale
-    cv::Mat grayscale;
-    cvtColor( _input, grayscale, CV_BGR2GRAY );
-
     // Pad it by the size of the window
-    cv::Mat padded = cv::Mat( rows + 2*wsize2, cols + 2*wsize2, CV_8UC1 );
+    cv::Mat padded = cv::Mat( rows + 2*wsize2, cols + 2*wsize2, CV_8UC3 );
    
-    cv::copyMakeBorder( grayscale, padded, 
+    cv::copyMakeBorder( _input, padded, 
                         wsize2, wsize2, 
                         wsize2, wsize2, 
                         cv::BORDER_REPLICATE, cv::Scalar::all(0) );  
@@ -65,52 +58,47 @@ cv::Mat Pyramid::Reduce( const cv::Mat &_input, int _windowSize ) {
     // Create reduced Matrix
     float *reducedFloat;
     reducedFloat = new float[rows2*cols2];
-    cv::Mat reduced = cv::Mat::zeros( rows2, cols2, CV_8UC1 );
+    cv::Mat reduced = cv::Mat::zeros( rows2, cols2, CV_8UC3 );
 
-    // Apply 
-    float sum;
-    int ind = 0;
-    for( unsigned j = 0; j < rows2; j++ ) {
-      for( unsigned i = 0; i < cols2; i++ ) {
-        sum = 0;         
-        for( int m = -wsize2; m <= wsize2; m++ ) {
-          for( int n = -wsize2; n <= wsize2; n++ ) {
-            float g= (float) padded.at<uchar>(2*j + m + wsize2, 2*i + n + wsize2); 
-            sum += window[m+wsize2][n+wsize2]*g;
-          }     
-        } 
-        reducedFloat[ind] = sum;
-        ind++;
+    // Apply for each channel 
+    for( int k = 0; k < 3; k++ ) {
+
+      float sum;
+      int ind = 0;
+      for( unsigned j = 0; j < rows2; j++ ) {
+        for( unsigned i = 0; i < cols2; i++ ) {
+          sum = 0;         
+          for( int m = -wsize2; m <= wsize2; m++ ) {
+            for( int n = -wsize2; n <= wsize2; n++ ) {
+              float g= (float) padded.at<cv::Vec3b>(2*j + m + wsize2, 2*i + n + wsize2)[k]; 
+              sum += window[m+wsize2][n+wsize2]*g;
+            }     
+          } 
+          reducedFloat[ind] = sum;
+          ind++;
+        }
       }
-    }
 
-    // Go to integer values
-   float minG = *std::min_element( reducedFloat, reducedFloat + rows2*cols2 );
-   float maxG = *std::max_element( reducedFloat, reducedFloat + rows2*cols2 );
+      // Go to integer values
+     float minG = *std::min_element( reducedFloat, reducedFloat + rows2*cols2 );
+     float maxG = *std::max_element( reducedFloat, reducedFloat + rows2*cols2 );
 
-   printf("minG: %.4f \n", minG );
-   printf("maxG: %.4f \n", maxG );
+     printf("--minG: %.4f channel: %d \n", minG, k );
+     printf("--maxG: %.4f channel: %d \n", maxG, k );
 
-   ind = 0;
-   for( unsigned int j = 0; j < rows2; j++ )
-   {  for( unsigned int i = 0; i < cols2; i++ )
-      {
-         uchar d = (uchar) 255.0*( reducedFloat[ind] - minG )/( maxG - minG );
-         reduced.at<uchar>(j,i) = d; 
-         ind++; 
-      }
-   }
+     ind = 0;
+     for( unsigned int j = 0; j < rows2; j++ )
+     {  for( unsigned int i = 0; i < cols2; i++ )
+        {
+           uchar d = (uchar) 255.0*( reducedFloat[ind] - minG )/( maxG - minG );
+           reduced.at<cv::Vec3b>(j,i)[k] = d; 
+           ind++; 
+        }
+     }
 
-    // Back to original form, if needed
-cv::Mat reducedColor;
-    if( colorFlag == true )
-    {   
-        
-        cvtColor( reduced, reducedColor, CV_GRAY2BGR, 3 );
-        return reducedColor;
-    } else {
-        return reduced; 
-    }
+   } // end for channels
+
+  return reduced; 
 }
 
 /**

@@ -40,7 +40,7 @@ void Matching::Init_Pair1( const cv::Mat &_img1,
    cvtColor( mColor1, mPair1, CV_BGR2GRAY );
 
    // Gauss filter
-   cv::GaussianBlur( mPair1, mPair1, cv::Size(3,3),0,0 );
+   cv::GaussianBlur( mPair1, mPair1, cv::Size(5,5),0,0 );
 
    mG1.Init( mPair1 );
 
@@ -100,7 +100,7 @@ void Matching::Init_Pair2( const cv::Mat &_img2,
    cvtColor( mColor2, mPair2, CV_BGR2GRAY );
 
    // Gauss filter
-   cv::GaussianBlur( mPair2, mPair2, cv::Size(3,3),0,0 );
+   cv::GaussianBlur( mPair2, mPair2, cv::Size(5,5),0,0 );
 
    mG2.Init( mPair2 );
 
