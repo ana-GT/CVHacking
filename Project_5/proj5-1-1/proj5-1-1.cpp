@@ -25,13 +25,12 @@ int main( int argc, char* argv[] ) {
     Pyramid pyr;
 
     // Apply REDUCE 4 times to build the Gaussian Pyramid
-    int wsize = 5;
    
     GP.resize(4);
     GP[0] = img.clone();
-    GP[1] = pyr.Reduce( GP[0], 1*wsize );
-    GP[2] = pyr.Reduce( GP[1], 2*wsize );
-    GP[3] = pyr.Reduce( GP[2], 4*wsize );     
+    GP[1] = pyr.Reduce( GP[0] );
+    GP[2] = pyr.Reduce( GP[1] );
+    GP[3] = pyr.Reduce( GP[2] );     
 
 
     // Write images
