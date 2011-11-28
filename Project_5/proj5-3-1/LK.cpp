@@ -256,7 +256,9 @@ void LK::OpticFlowEstimation2( const cv::Mat &_img1,
 void LK::OpticFlowEstimation3( const cv::Mat &_img1, 
                               const cv::Mat &_img2, 
                               cv::Mat &_u,
-                              cv::Mat &_v ) {
+                              cv::Mat &_v, int _level ) {
+
+    float thresh = pow(2, _level);    
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -287,8 +289,14 @@ void LK::OpticFlowEstimation3( const cv::Mat &_img1,
 
     for(int y = 0 ; y < flow.rows; ++y) {
         for(int x = 0 ; x < flow.cols; ++x) {
-          mU.at<float>(y,x) = flow.at<cv::Point2f>(y,x).x;
-          mV.at<float>(y,x) = flow.at<cv::Point2f>(y,x).y;
+          if( flow.at<cv::Point2f>(y,x).x > thresh || flow.at<cv::Point2f>(y,x).x < -thresh )
+          {  mU.at<float>(y,x) = 0; }
+          else 
+          {  mU.at<float>(y,x) = flow.at<cv::Point2f>(y,x).x; }
+          if( flow.at<cv::Point2f>(y,x).y > thresh || flow.at<cv::Point2f>(y,x).y < -thresh )
+          { mV.at<float>(y,x) = 0; }
+          else
+          { mV.at<float>(y,x) = flow.at<cv::Point2f>(y,x).y; }
        }
     } 
 
@@ -612,47 +620,42 @@ void LK::DrawVerArrow( cv::Mat &_img,
  */
 cv::Mat LK::Remap2to1( cv::Mat _img2,  cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
 
-  float thresh = 20;
   cv::Mat map_x, map_y;
-  cv::Mat remapped;
+  cv::Mat remapped; cv::Mat remapped2;
   std::vector< cv::Point> same(0);
 
-  //remapped.create( _img2.size(), CV_32FC1 );
   map_x.create( _img2.size(), CV_32FC1 );
   map_y.create( _img2.size(), CV_32FC1 );
 
    for( int j = 0; j < _img2.rows; j++ )
    { for( int i = 0; i < _img2.cols; i++ )
        {
-             if( (_vel_x.at<float>(j,i) < thresh && _vel_x.at<float>(j,i) > -thresh) &&
-                  ( _vel_y.at<float>(j,i) < thresh && _vel_y.at<float>(j,i) > -thresh ) )
-             { map_x.at<float>(j,i) = ( (float)i + _vel_x.at<float>(j,i) );
-               map_y.at<float>(j,i) = ( (float)j + _vel_y.at<float>(j,i) );
-             }
-             else
-             { same.push_back( cv::Point(j,i) ); //map_x.at<float>(j,i) = j; map_x.at<float>(j,i) = i; 
-             }
+            map_x.at<float>(j,i) = ( (float)i + _vel_x.at<float>(j,i) );
+            map_y.at<float>(j,i) = ( (float)j + _vel_y.at<float>(j,i) );
+
+            if( _vel_x.at<float>(j,i) == 0 &&
+                _vel_y.at<float>(j,i) == 0 )
+            { same.push_back( cv::Point(i,j) ); }
              
       }
    }
 
   cv::remap( _img2, remapped, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
-
+  cv::remap( _img2, remapped2, map_x, map_y, cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
+/*
   if( remapped.type() == CV_8UC1 ) {
-      printf("TUPE \n");
       for( int j = 0; j < same.size(); j++ ) {
         remapped.at<uchar>( same[j].y, same[j].x ) = _img1.at<uchar>( same[j].y, same[j].x ); 
       }
   }  
   else if( remapped.type() == CV_8UC3 ) {
-        printf("TUPE2 \n");
       for( int j = 0; j < same.size(); j++ ) {
         remapped.at<cv::Vec3b>( same[j].y, same[j].x )[0] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[0]; 
         remapped.at<cv::Vec3b>( same[j].y, same[j].x )[1] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[1]; 
         remapped.at<cv::Vec3b>( same[j].y, same[j].x )[2] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[2]; 
       }
   }
-
+*/
   return remapped;
 }
 
@@ -665,7 +668,6 @@ cv::Mat LK::Remap1to2( cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
   cv::Mat map_x, map_y;
   cv::Mat remapped;
 
-  //remapped.create( _img2.size(), CV_32FC1 );
   map_x.create( _img1.size(), CV_32FC1 );
   map_y.create( _img1.size(), CV_32FC1 );
 

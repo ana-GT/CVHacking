@@ -24,16 +24,16 @@ int main( int argc, char* argv[] ) {
     if( argc < 3 )
     { printf("You moron! I need at least two images \n"); return -1; }
 
-    /// Load images grayscale
+    /// Load images as they are
     cv::Mat L = cv::imread( argv[1], -1 );
     cv::Mat R = cv::imread( argv[2], -1 );
   
-    // Have ready my Pyramid object
+    // Have ready my Pyramid  and LK object
     Pyramid pyr;
     LK lk;
 
     // Hierarchical LK
-    int n = 3; // Max level 
+    int n = 4; // Max level 
     int k;
 
     // Get the required pyramid levels
@@ -61,8 +61,8 @@ int main( int argc, char* argv[] ) {
     while( k >= 0 ) {
 
       /// 2. Reduce both images to level k
-      Lk = PL[k]; Rk = PR[k]; 
-
+      Lk = PL[k]; 
+      Rk = PR[k]; 
 
       /// 3. If k = n initialize U and K to zeros of the size of Lk 
       if( k == n ) {
@@ -98,7 +98,7 @@ int main( int argc, char* argv[] ) {
       cvtColor( Lk, Lkg, CV_BGR2GRAY );
       cvtColor( Rk, Rkg, CV_BGR2GRAY );
 
-      lk.OpticFlowEstimation3( Lkg, Wkg, Dx, Dy );
+      lk.OpticFlowEstimation3( Lkg, Wkg, Dx, Dy, 10 );
    
       /// 6. Add these to the original flow
       for( int j = 0; j < U.rows; j++ )
@@ -109,7 +109,7 @@ int main( int argc, char* argv[] ) {
         }
       }
 
-      cv::Mat temp = lk.Remap2to1( Wk, Lk, Dx, Dy );
+      cv::Mat temp = lk.Remap2to1( Rk, Lk, U, V );
       sprintf( buf, "Wk%dend.png", k);
       imwrite( buf, temp );   
 

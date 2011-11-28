@@ -37,7 +37,8 @@ public:
     void OpticFlowEstimation3( const cv::Mat &_leftImg, 
                               const cv::Mat &_rightImg, 
                               cv::Mat &_u,
-                              cv::Mat &_v );
+                              cv::Mat &_v, 
+                              int _level );
     void DrawMotionArrows( cv::Mat &_mu, 
                            cv::Mat &_mv );
     void DrawMotionArrows2( cv::Mat &_mu, 
