@@ -31,7 +31,8 @@ LK::~LK() {
 void LK::OpticFlowEstimation1( const cv::Mat &_img1, 
                                const cv::Mat &_img2, 
                                cv::Mat &_u,
-                               cv::Mat &_v ) {
+                               cv::Mat &_v, 
+                               float _thresh ) {
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -101,9 +102,9 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
          
         cv::Mat eigenvalues;
         cv::eigen( A, eigenvalues );
-        float mThresh = 0.01;
+        float mThresh = 0.001;
         if( eigenvalues.at<float>(0,0) != 0 && eigenvalues.at<float>(1,0) != 0 ) { 
-          if( eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) < mThresh ) { 
+          if( eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) < mThresh &&  eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) > -mThresh ) { 
             mU.at<float>(j,i) = 0;
             mV.at<float>(j,i) = 0;
           }
@@ -112,9 +113,30 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
         else {
           svd(A);
           svd.backSubst( B, X );
+            mU.at<float>(j,i) = X.at<float>( 0,0 )*2.0; 
+            mV.at<float>(j,i) = X.at<float>( 1,0 )*2.0;
 
-          mU.at<float>(j,i) = X.at<float>( 0,0 )*8.0;
-          mV.at<float>(j,i) = X.at<float>( 1,0 )*8.0;
+          if( abs( X.at<float>( 0,0 ) ) > _thresh ) { 
+            mU.at<float>(j,i) = _thresh; 
+          }
+          else if( abs( X.at<float>( 0,0 ) ) < -_thresh ) {
+            mU.at<float>(j,i) = -_thresh; 
+          }
+          else {
+            mU.at<float>(j,i) = X.at<float>( 0,0 ); 
+          }
+
+          if( abs( X.at<float>( 1,0 ) ) > _thresh ) {
+            mV.at<float>(j,i) = _thresh; 
+          }
+          else if( abs( X.at<float>( 1,0 ) ) < -_thresh ) {
+            mV.at<float>(j,i) = -_thresh; 
+          }
+          else { 
+            mV.at<float>(j,i) = X.at<float>( 1,0 );
+          }
+
+
         }
       }
     }
@@ -139,7 +161,8 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
 void LK::OpticFlowEstimation2( const cv::Mat &_img1, 
                               const cv::Mat &_img2, 
                               cv::Mat &_u,
-                              cv::Mat &_v ) {
+                              cv::Mat &_v,
+                              float _thresh ) {
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -256,9 +279,8 @@ void LK::OpticFlowEstimation2( const cv::Mat &_img1,
 void LK::OpticFlowEstimation3( const cv::Mat &_img1, 
                               const cv::Mat &_img2, 
                               cv::Mat &_u,
-                              cv::Mat &_v, int _level ) {
-
-    float thresh = pow(2, _level);    
+                              cv::Mat &_v,
+                              float _thresh ) { 
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -289,16 +311,22 @@ void LK::OpticFlowEstimation3( const cv::Mat &_img1,
 
     for(int y = 0 ; y < flow.rows; ++y) {
         for(int x = 0 ; x < flow.cols; ++x) {
-          if( flow.at<cv::Point2f>(y,x).x > thresh || flow.at<cv::Point2f>(y,x).x < -thresh )
-          {  mU.at<float>(y,x) = 0; }
-          else 
-          {  mU.at<float>(y,x) = flow.at<cv::Point2f>(y,x).x; }
-          if( flow.at<cv::Point2f>(y,x).y > thresh || flow.at<cv::Point2f>(y,x).y < -thresh )
-          { mV.at<float>(y,x) = 0; }
-          else
-          { mV.at<float>(y,x) = flow.at<cv::Point2f>(y,x).y; }
+
+          mU.at<float>(y,x) = flow.at<cv::Point2f>(y,x).x;
+          mV.at<float>(y,x) = flow.at<cv::Point2f>(y,x).y;
+
+          if( flow.at<cv::Point2f>(y,x).x > _thresh )
+          { mU.at<float>(y,x) = _thresh; }
+          if( flow.at<cv::Point2f>(y,x).x < -_thresh ) 
+          { mU.at<float>(y,x) = -_thresh; }  
+          if( flow.at<cv::Point2f>(y,x).y > _thresh ) 
+          { mV.at<float>(y,x) = _thresh; }
+          if( flow.at<cv::Point2f>(y,x).y < -_thresh )
+          { mV.at<float>(y,x) = -_thresh; }
+
        }
     } 
+
 
    double minVal; double maxVal;
    cv::Point minPoint; cv::Point maxPoint;
@@ -618,7 +646,7 @@ void LK::DrawVerArrow( cv::Mat &_img,
 /**
  * @function Remap2to1
  */
-cv::Mat LK::Remap2to1( cv::Mat _img2,  cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
+cv::Mat LK::Remap2to1( cv::Mat _img2, cv::Mat _vel_x, cv::Mat _vel_y ) {
 
   cv::Mat map_x, map_y;
   cv::Mat remapped; cv::Mat remapped2;
@@ -627,35 +655,30 @@ cv::Mat LK::Remap2to1( cv::Mat _img2,  cv::Mat _img1, cv::Mat _vel_x, cv::Mat _v
   map_x.create( _img2.size(), CV_32FC1 );
   map_y.create( _img2.size(), CV_32FC1 );
 
+
+  float di, dj;
+
    for( int j = 0; j < _img2.rows; j++ )
    { for( int i = 0; i < _img2.cols; i++ )
        {
-            map_x.at<float>(j,i) = ( (float)i + _vel_x.at<float>(j,i) );
-            map_y.at<float>(j,i) = ( (float)j + _vel_y.at<float>(j,i) );
+            di = ( (float)i + _vel_x.at<float>(j,i) );
+            dj = ( (float)j + _vel_y.at<float>(j,i) );
 
-            if( _vel_x.at<float>(j,i) == 0 &&
-                _vel_y.at<float>(j,i) == 0 )
-            { same.push_back( cv::Point(i,j) ); }
-             
-      }
+            if( di >= _img2.cols || di < 0 ) 
+            { map_x.at<float>(j,i) = i; } 
+            else
+            { map_x.at<float>(j,i) = di; }
+
+            if( dj >= _img2.rows || dj < 0 ) 
+            {  map_y.at<float>(j,i) = j; }
+            else 
+            { map_y.at<float>(j,i) = dj; }
+       }
    }
 
   cv::remap( _img2, remapped, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
   cv::remap( _img2, remapped2, map_x, map_y, cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
-/*
-  if( remapped.type() == CV_8UC1 ) {
-      for( int j = 0; j < same.size(); j++ ) {
-        remapped.at<uchar>( same[j].y, same[j].x ) = _img1.at<uchar>( same[j].y, same[j].x ); 
-      }
-  }  
-  else if( remapped.type() == CV_8UC3 ) {
-      for( int j = 0; j < same.size(); j++ ) {
-        remapped.at<cv::Vec3b>( same[j].y, same[j].x )[0] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[0]; 
-        remapped.at<cv::Vec3b>( same[j].y, same[j].x )[1] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[1]; 
-        remapped.at<cv::Vec3b>( same[j].y, same[j].x )[2] = _img1.at<cv::Vec3b>( same[j].y, same[j].x )[2]; 
-      }
-  }
-*/
+
   return remapped;
 }
 
@@ -664,7 +687,6 @@ cv::Mat LK::Remap2to1( cv::Mat _img2,  cv::Mat _img1, cv::Mat _vel_x, cv::Mat _v
  */
 cv::Mat LK::Remap1to2( cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
 
-  float thresh = 8;
   cv::Mat map_x, map_y;
   cv::Mat remapped;
 
@@ -674,25 +696,8 @@ cv::Mat LK::Remap1to2( cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
    for( int j = 0; j < _img1.rows; j++ )
    { for( int i = 0; i < _img1.cols; i++ )
        {
-          map_x.at<float>(j,i) = i;
-          map_y.at<float>(j,i) = j;
-       }
-   }
-
-   for( int j = 0; j < _img1.rows; j++ )
-   { for( int i = 0; i < _img1.cols; i++ )
-       {
-             if( _vel_x.at<float>(j,i) < thresh && _vel_x.at<float>(j,i) > -thresh )
-             { 
-                int di = (int) ceil( (float)i + _vel_x.at<float>(j,i) );
-                map_x.at<float>(j,di) = i; 
-             }
-
-             if( _vel_y.at<float>(j,i) < thresh && _vel_y.at<float>(j,i) > -thresh ) 
-             { 
-               int dj = (int) ceil( (float)j + _vel_y.at<float>(j,i) );
-               map_y.at<float>(dj,i) = j; 
-             }
+            map_x.at<float>(j,i) = ( (float)i - _vel_x.at<float>(j,i) );
+            map_y.at<float>(j,i) = ( (float)j - _vel_y.at<float>(j,i) );             
       }
    }
 

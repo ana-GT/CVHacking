@@ -88,7 +88,7 @@ int main( int argc, char* argv[] ) {
       }
 
       /// 4. Warp Lk using U and V to form Wk
-      Wk = lk.Remap2to1( Rk, Lk, U, V );
+      Wk = lk.Remap2to1( Rk, U, V );
       char buf[30];
       sprintf( buf, "Wk%d.png", k);
       imwrite( buf, Wk );
@@ -98,7 +98,8 @@ int main( int argc, char* argv[] ) {
       cvtColor( Lk, Lkg, CV_BGR2GRAY );
       cvtColor( Rk, Rkg, CV_BGR2GRAY );
 
-      lk.OpticFlowEstimation3( Lkg, Wkg, Dx, Dy, 10 );
+      //lk.OpticFlowEstimation1( Lkg, Wkg, Dx, Dy, 2.0 );
+      //lk.OpticFlowEstimation3( Lkg, Wkg, Dx, Dy, 2.0 );
    
       /// 6. Add these to the original flow
       for( int j = 0; j < U.rows; j++ )
@@ -109,32 +110,25 @@ int main( int argc, char* argv[] ) {
         }
       }
 
-      cv::Mat temp = lk.Remap2to1( Rk, Lk, U, V );
+      cv::Mat temp = lk.Remap2to1( Rk, U, V );
       sprintf( buf, "Wk%dend.png", k);
       imwrite( buf, temp );   
 
       k = k - 1;
     } // end of while
 
-    printf("Good \n");
-
     cv::Mat mU, mV;
     lk.DrawMotionArrows3( U, V, mU, mV );
 
-    printf("Good 2\n");
 
     cv::Mat remap;
-    remap = lk.Remap2to1( R, L, U, V );
-
-    printf("Good 4\n");
+    remap = lk.Remap2to1( R, U, V );
 
 
     cv::Mat remapg;
     cvtColor( remap, remapg, CV_BGR2GRAY );
     cv::Mat diffRemap;
     diffRemap = lk.GetDiff( remapg, L );
-
-    printf("Good 5\n");
 
     cv::Mat diff21;
     diff21 = lk.GetDiff( L, R );

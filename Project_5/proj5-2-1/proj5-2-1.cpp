@@ -30,9 +30,9 @@ int main( int argc, char* argv[] ) {
     /// Create flow image
     cv::Mat u, v;
     LK lk;
-    lk.OpticFlowEstimation1( img1, img2, u, v );
+    lk.OpticFlowEstimation3( img1, img2, u, v,3 );
     cv::Mat dmu, dmv;
-    lk.DrawMotionArrows( dmu, dmv );
+    lk.DrawMotionArrows2( dmu, dmv );
 
     cv::Mat remap;
     remap = lk.Remap2to1( img2, u, v );

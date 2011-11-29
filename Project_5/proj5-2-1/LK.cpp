@@ -31,7 +31,8 @@ LK::~LK() {
 void LK::OpticFlowEstimation1( const cv::Mat &_img1, 
                                const cv::Mat &_img2, 
                                cv::Mat &_u,
-                               cv::Mat &_v ) {
+                               cv::Mat &_v, 
+                               float _thresh ) {
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -103,7 +104,7 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
         cv::eigen( A, eigenvalues );
         float mThresh = 0.001;
         if( eigenvalues.at<float>(0,0) != 0 && eigenvalues.at<float>(1,0) != 0 ) { 
-          if( eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) < mThresh ) { 
+          if( eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) < mThresh &&  eigenvalues.at<float>(1,0) / eigenvalues.at<float>(0,0) > -mThresh ) { 
             mU.at<float>(j,i) = 0;
             mV.at<float>(j,i) = 0;
           }
@@ -112,9 +113,30 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
         else {
           svd(A);
           svd.backSubst( B, X );
+            mU.at<float>(j,i) = X.at<float>( 0,0 )*2.0; 
+            mV.at<float>(j,i) = X.at<float>( 1,0 )*2.0;
 
-          mU.at<float>(j,i) = X.at<float>( 0,0 )*8.0;
-          mV.at<float>(j,i) = X.at<float>( 1,0 )*8.0;
+          if( abs( X.at<float>( 0,0 ) ) > _thresh ) { 
+            mU.at<float>(j,i) = _thresh; 
+          }
+          else if( abs( X.at<float>( 0,0 ) ) < -_thresh ) {
+            mU.at<float>(j,i) = -_thresh; 
+          }
+          else {
+            mU.at<float>(j,i) = X.at<float>( 0,0 ); 
+          }
+
+          if( abs( X.at<float>( 1,0 ) ) > _thresh ) {
+            mV.at<float>(j,i) = _thresh; 
+          }
+          else if( abs( X.at<float>( 1,0 ) ) < -_thresh ) {
+            mV.at<float>(j,i) = -_thresh; 
+          }
+          else { 
+            mV.at<float>(j,i) = X.at<float>( 1,0 );
+          }
+
+
         }
       }
     }
@@ -139,7 +161,8 @@ void LK::OpticFlowEstimation1( const cv::Mat &_img1,
 void LK::OpticFlowEstimation2( const cv::Mat &_img1, 
                               const cv::Mat &_img2, 
                               cv::Mat &_u,
-                              cv::Mat &_v ) {
+                              cv::Mat &_v,
+                              float _thresh ) {
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -251,11 +274,13 @@ void LK::OpticFlowEstimation2( const cv::Mat &_img1,
 
 /**
  * @function OpticFlowEstimation
+ * @brief To test against the real thing
  */
 void LK::OpticFlowEstimation3( const cv::Mat &_img1, 
                               const cv::Mat &_img2, 
                               cv::Mat &_u,
-                              cv::Mat &_v ) {
+                              cv::Mat &_v,
+                              float _thresh ) { 
 
     mImg1 = _img1.clone();
     mImg2 = _img2.clone();
@@ -286,10 +311,22 @@ void LK::OpticFlowEstimation3( const cv::Mat &_img1,
 
     for(int y = 0 ; y < flow.rows; ++y) {
         for(int x = 0 ; x < flow.cols; ++x) {
+
           mU.at<float>(y,x) = flow.at<cv::Point2f>(y,x).x;
           mV.at<float>(y,x) = flow.at<cv::Point2f>(y,x).y;
+
+          if( flow.at<cv::Point2f>(y,x).x > _thresh )
+          { mU.at<float>(y,x) = _thresh; }
+          if( flow.at<cv::Point2f>(y,x).x < -_thresh ) 
+          { mU.at<float>(y,x) = -_thresh; }  
+          if( flow.at<cv::Point2f>(y,x).y > _thresh ) 
+          { mV.at<float>(y,x) = _thresh; }
+          if( flow.at<cv::Point2f>(y,x).y < -_thresh )
+          { mV.at<float>(y,x) = -_thresh; }
+
        }
     } 
+
 
    double minVal; double maxVal;
    cv::Point minPoint; cv::Point maxPoint;
@@ -358,6 +395,191 @@ void LK::DrawMotionArrows( cv::Mat &_mu,
       }
     }    
 
+}
+
+
+/**
+ * @function DrawMotionArrows
+ */
+void LK::DrawMotionArrows2( cv::Mat &_mu, 
+                           cv::Mat &_mv ) {
+
+    _mu = cv::Mat( mRows, mCols, CV_8UC3 );
+    _mv = cv::Mat( mRows, mCols, CV_8UC3 );
+
+   double minUNegVal; 
+   double maxUPosVal;
+   double minVNegVal;
+   double maxVPosVal;
+
+   cv::Point minPoint; cv::Point maxPoint;
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( mU.at<float>(j,i) < 0 ) {
+          if( mU.at<float>(j,i) < minUNegVal ) {
+           minUNegVal = mU.at<float>(j,i);
+          }        
+        }
+        else {
+          if( mU.at<float>(j,i) > maxUPosVal ) {
+           maxUPosVal = mU.at<float>(j,i);
+          }        
+        }
+      }
+    }
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( mV.at<float>(j,i) < 0 ) {
+          if( mV.at<float>(j,i) < minVNegVal ) {
+           minVNegVal = mV.at<float>(j,i);
+          }        
+        }
+        else {
+          if( mV.at<float>(j,i) > maxVPosVal ) {
+           maxVPosVal = mV.at<float>(j,i);
+          }        
+        }
+      }
+    }
+
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+            _mu.at<cv::Vec3b>(j,i)[0] = 0; _mu.at<cv::Vec3b>(j,i)[1] = 0; _mu.at<cv::Vec3b>(j,i)[2] = 0;
+            _mv.at<cv::Vec3b>(j,i)[0] = 0; _mv.at<cv::Vec3b>(j,i)[1] = 0; _mv.at<cv::Vec3b>(j,i)[2] = 0;
+      } 
+    }
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( mU.at<float>(j,i) < 0 ) {
+           _mu.at<cv::Vec3b>(j,i)[0] = (uchar)( -mU.at<float>(j,i)/(-minUNegVal) * 255 );
+           _mu.at<cv::Vec3b>(j,i)[1] = 0;
+           _mu.at<cv::Vec3b>(j,i)[2] = 0;
+        }
+
+        else {
+           _mu.at<cv::Vec3b>(j,i)[0] = (uchar)( mU.at<float>(j,i)/(maxUPosVal) * 255.0 );
+           _mu.at<cv::Vec3b>(j,i)[1] = 0;
+           _mu.at<cv::Vec3b>(j,i)[2] = (uchar)( mU.at<float>(j,i)/(maxUPosVal) * 255.0 );
+        }
+
+        if( mV.at<float>(j,i) < 0 ) {
+           _mv.at<cv::Vec3b>(j,i)[0] = (uchar)( -mV.at<float>(j,i)/(-minVNegVal) * 255 );
+           _mv.at<cv::Vec3b>(j,i)[1] = 0;
+           _mv.at<cv::Vec3b>(j,i)[2] = 0;
+        }
+
+        else {
+           _mv.at<cv::Vec3b>(j,i)[0] = (uchar)( mV.at<float>(j,i)/(maxVPosVal) * 255 );
+           _mv.at<cv::Vec3b>(j,i)[1] = 0;
+           _mv.at<cv::Vec3b>(j,i)[2] = (uchar)( mV.at<float>(j,i)/(maxVPosVal) * 255 );
+        }
+
+ 
+      }
+    }    
+
+}
+
+
+/**
+ * @function DrawMotionArrows3
+ */
+void LK::DrawMotionArrows3( cv::Mat U, cv::Mat V, cv::Mat &_mu, 
+                           cv::Mat &_mv ) {
+
+    _mu = cv::Mat( U.rows, U.cols, CV_8UC3 );
+    _mv = cv::Mat( U.rows, U.cols, CV_8UC3 );
+
+   double minUNegVal; 
+   double maxUPosVal;
+   double minVNegVal;
+   double maxVPosVal;
+
+   cv::Point minPoint; cv::Point maxPoint;
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( U.at<float>(j,i) < 0 ) {
+          if( U.at<float>(j,i) < minUNegVal ) {
+           minUNegVal = U.at<float>(j,i);
+          }        
+        }
+        else {
+          if( U.at<float>(j,i) > maxUPosVal ) {
+           maxUPosVal = U.at<float>(j,i);
+          }        
+        }
+      }
+    }
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( V.at<float>(j,i) < 0 ) {
+          if( V.at<float>(j,i) < minVNegVal ) {
+           minVNegVal = V.at<float>(j,i);
+          }        
+        }
+        else {
+          if( V.at<float>(j,i) > maxVPosVal ) {
+           maxVPosVal = V.at<float>(j,i);
+          }        
+        }
+      }
+    }
+
+
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+            _mu.at<cv::Vec3b>(j,i)[0] = 0; _mu.at<cv::Vec3b>(j,i)[1] = 0; _mu.at<cv::Vec3b>(j,i)[2] = 0;
+            _mv.at<cv::Vec3b>(j,i)[0] = 0; _mv.at<cv::Vec3b>(j,i)[1] = 0; _mv.at<cv::Vec3b>(j,i)[2] = 0;
+      } 
+    }
+
+    for( int j = 0; j < mRows; j++ ) {
+      for( int i = 0; i < mCols; i++ ) {
+
+        if( U.at<float>(j,i) < 0 ) {
+           _mu.at<cv::Vec3b>(j,i)[0] = (uchar)( -U.at<float>(j,i)/(-minUNegVal) * 255 );
+           _mu.at<cv::Vec3b>(j,i)[1] = 0;
+           _mu.at<cv::Vec3b>(j,i)[2] = 0;
+        }
+
+        else {
+           _mu.at<cv::Vec3b>(j,i)[0] = (uchar)( U.at<float>(j,i)/(maxUPosVal) * 255.0 );
+           _mu.at<cv::Vec3b>(j,i)[1] = 0;
+           _mu.at<cv::Vec3b>(j,i)[2] = (uchar)( U.at<float>(j,i)/(maxUPosVal) * 255.0 );
+        }
+
+        if( V.at<float>(j,i) < 0 ) {
+           _mv.at<cv::Vec3b>(j,i)[0] = (uchar)( -V.at<float>(j,i)/(-minVNegVal) * 255 );
+           _mv.at<cv::Vec3b>(j,i)[1] = 0;
+           _mv.at<cv::Vec3b>(j,i)[2] = 0;
+        }
+
+        else {
+           _mv.at<cv::Vec3b>(j,i)[0] = (uchar)( V.at<float>(j,i)/(maxVPosVal) * 255 );
+           _mv.at<cv::Vec3b>(j,i)[1] = 0;
+           _mv.at<cv::Vec3b>(j,i)[2] = (uchar)( V.at<float>(j,i)/(maxVPosVal) * 255 );
+        }
+
+ 
+      }
+    }    
 
 }
 
@@ -427,21 +649,59 @@ void LK::DrawVerArrow( cv::Mat &_img,
 cv::Mat LK::Remap2to1( cv::Mat _img2, cv::Mat _vel_x, cv::Mat _vel_y ) {
 
   cv::Mat map_x, map_y;
-  cv::Mat remapped;
+  cv::Mat remapped; cv::Mat remapped2;
+  std::vector< cv::Point> same(0);
 
-  remapped.create( _img2.size(), CV_32FC1 );
   map_x.create( _img2.size(), CV_32FC1 );
   map_y.create( _img2.size(), CV_32FC1 );
+
+
+  float di, dj;
 
    for( int j = 0; j < _img2.rows; j++ )
    { for( int i = 0; i < _img2.cols; i++ )
        {
-             map_x.at<float>(j,i) = i + _vel_x.at<float>(j,i);
-             map_y.at<float>(j,i) = j + _vel_y.at<float>(j,i);
+            di = ( (float)i + _vel_x.at<float>(j,i) );
+            dj = ( (float)j + _vel_y.at<float>(j,i) );
+
+            if( di >= _img2.cols || di < 0 ) 
+            { map_x.at<float>(j,i) = i; } 
+            else
+            { map_x.at<float>(j,i) = di; }
+
+            if( dj >= _img2.rows || dj < 0 ) 
+            {  map_y.at<float>(j,i) = j; }
+            else 
+            { map_y.at<float>(j,i) = dj; }
+       }
+   }
+
+  cv::remap( _img2, remapped, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
+  cv::remap( _img2, remapped2, map_x, map_y, cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
+
+  return remapped;
+}
+
+/**
+ * @function Remap1to2
+ */
+cv::Mat LK::Remap1to2( cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y ) {
+
+  cv::Mat map_x, map_y;
+  cv::Mat remapped;
+
+  map_x.create( _img1.size(), CV_32FC1 );
+  map_y.create( _img1.size(), CV_32FC1 );
+
+   for( int j = 0; j < _img1.rows; j++ )
+   { for( int i = 0; i < _img1.cols; i++ )
+       {
+            map_x.at<float>(j,i) = ( (float)i - _vel_x.at<float>(j,i) );
+            map_y.at<float>(j,i) = ( (float)j - _vel_y.at<float>(j,i) );             
       }
    }
 
-  cv::remap( _img2, remapped, map_x, map_y, cv::INTER_NEAREST, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
+  cv::remap( _img1, remapped, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0, 0) );
 
   return remapped;
 }

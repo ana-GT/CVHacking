@@ -27,19 +27,28 @@ public:
     void OpticFlowEstimation1( const cv::Mat &_leftImg, 
                               const cv::Mat &_rightImg, 
                               cv::Mat &_u,
-                              cv::Mat &_v );
+                              cv::Mat &_v, 
+                              float _thresh );
     // With Cramer
     void OpticFlowEstimation2( const cv::Mat &_leftImg, 
                               const cv::Mat &_rightImg, 
                               cv::Mat &_u,
-                              cv::Mat &_v );
+                              cv::Mat &_v,
+                              float _thresh );
     // With regular form - OpenCV style
     void OpticFlowEstimation3( const cv::Mat &_leftImg, 
                               const cv::Mat &_rightImg, 
                               cv::Mat &_u,
-                              cv::Mat &_v );
+                              cv::Mat &_v, 
+                              float _thresh );
     void DrawMotionArrows( cv::Mat &_mu, 
                            cv::Mat &_mv );
+    void DrawMotionArrows2( cv::Mat &_mu, 
+                            cv::Mat &_mv );
+    void DrawMotionArrows3( cv::Mat U, 
+                            cv::Mat V, 
+                            cv::Mat &_mu, 
+                            cv::Mat &_mv );
     void DrawHorArrow( cv::Mat &_img, 
                        cv::Point _p, 
                        int _orient,  
@@ -53,6 +62,7 @@ public:
                        cv::Scalar _color );
 
    cv::Mat Remap2to1( cv::Mat _img2, cv::Mat _vel_x, cv::Mat _vel_y );
+   cv::Mat Remap1to2( cv::Mat _img1, cv::Mat _vel_x, cv::Mat _vel_y );
    cv::Mat GetDiff( const cv::Mat &_img2, const cv::Mat &_img1 );
 
    cv::Mat mIx, mIy;

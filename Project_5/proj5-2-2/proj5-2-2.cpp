@@ -34,7 +34,8 @@ int main( int argc, char* argv[] ) {
     /// Create flow image
     cv::Mat u, v;
     LK lk;
-    lk.OpticFlowEstimation3( img1, img2, u, v );
+    lk.OpticFlowEstimation1( img1, img2, u, v );
+    //lk.OpticFlowEstimation3( img1, img2, u, v ); // test
     cv::Mat dmu, dmv, dmu2, dmv2;
     lk.DrawMotionArrows( dmu, dmv );
     lk.DrawMotionArrows2( dmu2, dmv2 );
