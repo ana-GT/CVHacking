@@ -18,95 +18,192 @@ testB = load("testB_blank.txt");
 nA = size( trainA, 1 );
 nB = size( trainB, 1 );
 
-% Putting together the test stuff
+% Assigning the test set (+) and (-)
 n = nA + nB;
 
-testData = zeros( n, 1 + size(testA,2) );
+% 1: x1
+% 2: x2 
+% 3: label 
+% 4: weight
+testData = zeros( n, 2 + size(testA,2) );
 
-testData( 1:nA, 3 ) = 1*ones(nA, 1); % A
-testData( nA+1:end, 3 ) = 2*ones(nB, 1); %B
+% labels
+testData( 1:nA, 3 ) = 1*ones(nA, 1); % A : +1
+testData( nA+1:end, 3 ) = -1*ones(nB, 1); %B : -1
 
+% x1, x2
 testData(:, 1:2 ) = [ testA; testB ];
 
+%weights
+testData(:, 4) = (1/n)*ones(n,1);
 
-% Find limits
-x1_min = min( testData(:,1) )
-x2_min = min( testData(:,2) )
-x1_max = max( testData(:,1) )
-x2_max = max( testData(:,2) )
 
-k = 100;
-dx1 = (x1_max - x1_min)/k
-dx2 = (x2_max - x2_min)/k
+% For each training stage
+T = 4;
 
-% Find best x1 slump
+for j = 1:T
 
-x_slump = zeros(k,2);
-error = zeros(k,2);
+	% a. Normalize weights
+	Sw = sum( testData(:,4) );
+	newWeights = testData(:,4)/Sw;
+	testData(:,4) = newWeights;
 
-x_slump(1,:) = [x1_min, x2_min];
+	% b. Select the best classifier
+	[x1_stump, err1, h1] = x1Stump( testData );
+	[x2_stump, err2, h2] = x2Stump( testData );	
 
-for i = 1:k
+    if( err1 < err2 )
+      weakClass(j,:) = [x1_stump, 1];
+      e_T = err1; h_T = h1;
+    else
+      weakClass(j,:) = [x2_stump, 2];
+	  e_T = err2; h_T = h2;
+	endif
 
-	predicted_x = zeros(n,2);
+    % Check
+	if( e_T >= 1/2)
+		break;
+	endif
 
-	% Classify
-	for j = 1:n
-		% x1
-    	if testData(j,1) < x_slump(i,1)
-		  predicted_x(j,1) = 1; 
-		else
-		  predicted_x(j,1) = 2;
-		endif
-		% x2
-    	if testData(j,2) < x_slump(i,2)
-		  predicted_x(j,2) = 1; 
-		else
-		  predicted_x(j,2) = 2;
-		endif
+	alpha_T = (1/2)*log((1-e_T)/e_T); 
 
-	end 	
-
-	% Check accuracy
-    count1 = 0; count2 = 0;
-
-	for j = 1:n
-    	if predicted_x(j,1) != testData(j,3)
-			count1++;
-		endif
-
-    	if predicted_x(j,2) != testData(j,3)
-			count2++;
-		endif
-
-	end 	
-	error(i,1) = count1;
-    error(i,2) = count2;   
-
-	% Update slump
-	x_slump(i+1,1) = x_slump(i,1) + dx1;
-    x_slump(i+1,2) = x_slump(i,2) + dx2;	
+	% Update
+	newWeights = (testData(:,4).*exp(-alpha_T.*testData(:,3).*h_T) );
+	Sw = sum( newWeights );
+    newWeights = newWeights/Sw;
+	testData(:,4) = newWeights;	
 end
 
-[minx1, minloc1] = min(error(:,1) );
-[minx2, minloc2] = min(error(:,2) );
+weakClass
 
-x1Slump = x_slump(minloc1,1)
-x2Slump = x_slump(minloc2,2)
+printf("Done \n");
 
-printf("Slump x1: %f error: %d for %d training data \n", x1Slump, error(minloc1, 1), n);
-printf("Slump x2: %f error: %d for %d training data \n", x2Slump, error(minloc2, 2), n);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [x1Slump, err, h1] = x1Stump( data )
 
-% Plot train set
-figure(1);
-plot( trainA(:,1), trainA(:,2), 'mx', 'markersize', 5, 'linewidth', 5 );
-hold on;
-plot( trainB(:,1), trainB(:,2), 'bx', 'markersize', 5, 'linewidth', 5  );
-plot( [x1Slump, x1Slump], ylim, 'g', 'linewidth', 5  );
-plot( xlim, [x2Slump, x2Slump], 'y', 'linewidth', 5  );
-legend('Class A', 'Class B','x1 stump', 'x2 stump' );
-title('Train Set');
-print('proj6-2-1-Slump.png', '-dpng');
-hold off;
+	n = size(data,1);
 
+	% Find limits
+	x1_min = min( data(:,1) );
+	x1_max = max( data(:,1) );
 
+	k = 100;
+	dx1 = (x1_max - x1_min)/k;
+
+	% Find best x1 slump
+
+	x1_slump = zeros(k,1);
+	error1 = zeros(k,1);
+
+	x1_slump(1,1) = x1_min;
+
+	for i = 1:k
+
+		predicted_x = zeros(n,1);
+
+		% Classify
+		for j = 1:n
+			% x1
+    		if data(j,1) < x1_slump(i,1)
+		  		predicted_x(j,1) = 1; % A 
+			else
+		  		predicted_x(j,1) = -1; % B
+			endif
+		end 	
+
+		% Check accuracy
+    	count1 = 0;
+
+		for j = 1:n
+    		if predicted_x(j,1) != data(j,3)
+				count1 = count1 + data(j,4);
+			endif
+		end 	
+		error1(i,1) = count1;
+
+		% Update slump
+		x1_slump(i+1,1) = x1_slump(i,1) + dx1;
+	end
+
+	[minx1, minloc1] = min(error1(:,1) );
+
+	x1Slump = x1_slump(minloc1,1);
+    err = error1(minloc1,1);
+
+	% h
+	h1 = zeros(n,1);
+	for j = 1:n
+   		if data(j,1) < x1Slump
+	  		h1(j,1) = 1; % A 
+		else
+	  		h1(j,1) = -1; % B
+		endif
+	end 	
+
+endfunction
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [x2Slump, err, h2] = x2Stump( data )
+
+	n = size(data,1);
+
+	% Find limits
+	x2_min = min( data(:,2) );
+	x2_max = max( data(:,2) );
+
+	k = 100;
+	dx2 = (x2_max - x2_min)/k;
+
+	% Find best x1 slump
+
+	x2_slump = zeros(k,1);
+	error2 = zeros(k,1);
+
+	x2_slump(1,1) = x2_min;
+
+	for i = 1:k
+
+		predicted_x = zeros(n,1);
+
+		% Classify
+		for j = 1:n
+			% x1
+    		if data(j,2) < x2_slump(i,1)
+		  		predicted_x(j,1) = 1; % A 
+			else
+		  		predicted_x(j,1) = -1; % B
+			endif
+		end 	
+
+		% Check accuracy
+    	count2 = 0;
+
+		for j = 1:n
+    		if predicted_x(j,1) != data(j,3)
+				count2 = count2 + data(j,4);
+			endif
+		end 	
+		error2(i,1) = count2;
+
+		% Update slump
+		x2_slump(i+1,1) = x2_slump(i,1) + dx2;
+	end
+
+	[minx2, minloc2] = min(error2(:,1) );
+
+	x2Slump = x2_slump(minloc2,1);
+    err = error2(minloc2,1);
+
+	% h
+	h2 = zeros(n,1);
+	for j = 1:n
+   		if data(j,2) < x2Slump
+	  		h2(j,1) = 1; % A 
+		else
+	  		h2(j,1) = -1; % B
+		endif
+	end 	
+
+endfunction
+
+ 
