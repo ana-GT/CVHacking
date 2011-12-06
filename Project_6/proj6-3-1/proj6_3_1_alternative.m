@@ -40,11 +40,10 @@ trainData(:, 4) = (1/n).*ones(n,1);
 
 
 % For each training stage
-T = 24;
+T = 16;
 
 weakClass = zeros(T,2);
 e_T = 0; h_T = zeros(n,1);
-alpha = zeros(T,1);
 
 for j = 1:T
 
@@ -52,20 +51,21 @@ for j = 1:T
 
     [stumps, err, hs] = xStumps( trainData );
 
-    [minval, minloc] = min(err);
-    weakClass(j,:) = [stumps(1,minloc), minloc];    
+    ht = abs( 0.5*ones(1,4) - err );
 
-    e_T = err( 1, minloc ); 
-    h_T = hs(:, minloc);
+    [maxval, maxloc] = max(ht);
+    weakClass(j,:) = [stumps(1,maxloc), maxloc];    
+
+    e_T = err( 1, maxloc ); 
+    h_T = hs(:, maxloc);
 
     % Check
-	if( abs(e_T) >= 0.5 )
+	if( abs(e_T) <= 0.005 )
 		printf("Breaking in T: %d e_T: %f \n", j, e_T);
 		break;
 	endif
 
 	alpha_T = (1/2)*log( (1-e_T)/e_T ); 
-    alpha(j,1) = alpha_T;
 
 	% Update
     oldWeights = trainData(:,4);
@@ -108,10 +108,11 @@ for i = 1:n
 	endif
 endfor
 
-printf("Misclassified %d out of %d with a T of: %d \n", finalErrors, n, T);
+printf("Misclassified %d out of %d \n with a T of: %d \n", finalErrors, n, T);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-printf("Plotting \n");
+
+printf("Plotting");
 
 % Plot train set
 figure(10);

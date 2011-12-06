@@ -18,95 +18,145 @@ testB = load("testB_blank.txt");
 nA = size( trainA, 1 );
 nB = size( trainB, 1 );
 
-% Putting together the test stuff
+% Assigning the test set (+) and (-)
 n = nA + nB;
+printf("Training data: A: %d B: %d - total: %d \n", nA, nB, n);
 
-testData = zeros( n, 1 + size(testA,2) );
+% 1: x1
+% 2: x2 
+% 3: label 
+% 4: weight
+trainData = zeros( n, 4 );
 
-testData( 1:nA, 3 ) = 1*ones(nA, 1); % A
-testData( nA+1:end, 3 ) = 2*ones(nB, 1); %B
+% x1, x2
+trainData(:, 1:2 ) = [ trainA; trainB ];
 
+% labels
+trainData( 1:nA, 3 ) = 1*ones(nA, 1); % A : +1
+trainData( nA+1:end, 3 ) = -1*ones(nB, 1); %B : -1
+
+%weights
+trainData(:, 4) = (1/n).*ones(n,1);
+
+
+% For each training stage
+T = 24;
+
+weakClass = zeros(T,2);
+e_T = 0; h_T = zeros(n,1);
+alpha = zeros(T,1);
+
+for j = 1:T
+
+	%  Select the best classifier
+
+    [stumps, err, hs] = xStumps( trainData );
+
+    [minval, minloc] = min(err);
+    weakClass(j,:) = [stumps(1,minloc), minloc];    
+
+    e_T = err( 1, minloc ); 
+    h_T = hs(:, minloc);
+
+    % Check
+	if( abs(e_T) >= 0.5 )
+		printf("Breaking in T: %d e_T: %f \n", j, e_T);
+		break;
+	endif
+
+	alpha_T = (1/2)*log( (1-e_T)/e_T ); 
+    alpha(j,1) = alpha_T;
+
+	% Update
+    oldWeights = trainData(:,4);
+    labels = trainData(:,3);
+	newWeights = (oldWeights.*exp(-alpha_T*labels.*h_T) );
+	Sw = sum( newWeights );
+	trainData(:,4) = newWeights/Sw;	
+    
+endfor
+
+weakClass
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Check output final classifier with TEST data
+printf("Checking accuracy with test, no training, data \n");
+
+tA = size( testA, 1 );
+tB = size( testB, 1 );
+
+% Assigning the test set (+) and (-)
+t = tA + tB;
+printf("Test data: A: %d B: %d - total: %d \n", nA, nB, n);
+
+% 1: x1
+% 2: x2 
+% 3: label 
+% 4: weight
+testData = zeros( t, 3 );
+% x1, x2
 testData(:, 1:2 ) = [ testA; testB ];
 
+% labels
+testData( 1:tA, 3 ) = 1*ones(tA, 1); % A : +1
+testData( tA+1:end, 3 ) = -1*ones(tB, 1); %B : -1
 
-% Find limits
-x1_min = min( testData(:,1) )
-x2_min = min( testData(:,2) )
-x1_max = max( testData(:,1) )
-x2_max = max( testData(:,2) )
+ch = zeros(t,T);
+H = zeros(t,1);
+sch = zeros(t,1);
 
-k = 100;
-dx1 = (x1_max - x1_min)/k
-dx2 = (x2_max - x2_min)/k
+for i = 1:T
+	ch(:,i) = alpha(i,1).*applyStump( testData, weakClass(i,1), weakClass(i,2) );
+    sch = sum(ch,2);
+endfor
 
-% Find best x1 slump
+for i = 1:n
+	if sch(i,1) < 0
+		H(i,1) = -1;
+	else
+		H(i,1) = 1;
+	endif
+endfor
 
-x_slump = zeros(k,2);
-error = zeros(k,2);
+% Calculate errors
+finalErrors = 0;
 
-x_slump(1,:) = [x1_min, x2_min];
+for i = 1:n
+	if H(i,1) != testData(i,3)
+		finalErrors++;
+	endif
+endfor
 
-for i = 1:k
+printf("Misclassified test: %d out of %d with a T of: %d \n", finalErrors, t, T);
 
-	predicted_x = zeros(n,2);
-
-	% Classify
-	for j = 1:n
-		% x1
-    	if testData(j,1) < x_slump(i,1)
-		  predicted_x(j,1) = 1; 
-		else
-		  predicted_x(j,1) = 2;
-		endif
-		% x2
-    	if testData(j,2) < x_slump(i,2)
-		  predicted_x(j,2) = 1; 
-		else
-		  predicted_x(j,2) = 2;
-		endif
-
-	end 	
-
-	% Check accuracy
-    count1 = 0; count2 = 0;
-
-	for j = 1:n
-    	if predicted_x(j,1) != testData(j,3)
-			count1++;
-		endif
-
-    	if predicted_x(j,2) != testData(j,3)
-			count2++;
-		endif
-
-	end 	
-	error(i,1) = count1;
-    error(i,2) = count2;   
-
-	% Update slump
-	x_slump(i+1,1) = x_slump(i,1) + dx1;
-    x_slump(i+1,2) = x_slump(i,2) + dx2;	
-end
-
-[minx1, minloc1] = min(error(:,1) );
-[minx2, minloc2] = min(error(:,2) );
-
-x1Slump = x_slump(minloc1,1)
-x2Slump = x_slump(minloc2,2)
-
-printf("Slump x1: %f error: %d for %d training data \n", x1Slump, error(minloc1, 1), n);
-printf("Slump x2: %f error: %d for %d training data \n", x2Slump, error(minloc2, 2), n);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+printf("Plotting \n");
 
 % Plot train set
-figure(1);
-plot( trainA(:,1), trainA(:,2), 'mx', 'markersize', 5, 'linewidth', 5 );
+figure(10);
+plot( testA(:,1), testA(:,2), 'rx', 'markersize', 5, 'linewidth', 5 );
 hold on;
-plot( trainB(:,1), trainB(:,2), 'bx', 'markersize', 5, 'linewidth', 5  );
-plot( [x1Slump, x1Slump], ylim, 'g', 'linewidth', 5  );
-plot( xlim, [x2Slump, x2Slump], 'y', 'linewidth', 5  );
-legend('Class A', 'Class B','x1 stump', 'x2 stump' );
-title('Train Set');
-print('proj6-2-1-Slump.png', '-dpng');
-hold off;
+plot( testB(:,1), testB(:,2), 'gx', 'markersize', 5, 'linewidth', 5  );
+
+for i = 1 : size(weakClass,1)
+
+	if( weakClass(i,2) == 1 )
+		plot( [weakClass(i,1), weakClass(i,1)], ylim, 'g', 'linewidth', 2  );
+	elseif ( weakClass(i,2) == 2 )
+		plot( [weakClass(i,1), weakClass(i,1)], ylim, 'c', 'linewidth', 2  );
+    elseif ( weakClass(i,2) == 3 )
+		plot( xlim, [weakClass(i,1), weakClass(i,1)], 'k', 'linewidth', 2  );
+    elseif ( weakClass(i,2) == 4 )
+		plot( xlim, [weakClass(i,1), weakClass(i,1)], 'r', 'linewidth', 2  );
+	else
+	    printf("Idiot! This should not happen \n");
+	endif
+    
+endfor
+
+	legend('Class A', 'Class B' );
+	title('Test Set');
+	print('proj6-3-2.png', '-dpng');
+	hold off;
 
 
