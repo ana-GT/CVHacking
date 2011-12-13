@@ -21,81 +21,42 @@ nB = size( trainB, 1 );
 % Putting together the test stuff
 n = nA + nB;
 
-testData = zeros( n, 1 + size(testA,2) );
+trainData = zeros( n, 2 + size(trainA,2) );
 
-testData( 1:nA, 3 ) = 1*ones(nA, 1); % A
-testData( nA+1:end, 3 ) = 2*ones(nB, 1); %B
+trainData( 1:nA, 3 ) = 1*ones(nA, 1); % A
+trainData( nA+1:end, 3 ) = -1*ones(nB, 1); %B
+trainData( :, 4 ) = 1; % A
 
-testData(:, 1:2 ) = [ testA; testB ];
+trainData(:, 1:2 ) = [ trainA; trainB ];
 
 
-% Find limits
-x1_min = min( testData(:,1) )
-x2_min = min( testData(:,2) )
-x1_max = max( testData(:,1) )
-x2_max = max( testData(:,2) )
+[stumps, err, hs] = xStumps( trainData );
 
-k = 100;
-dx1 = (x1_max - x1_min)/k
-dx2 = (x2_max - x2_min)/k
+err1 = err(1,1); err2 = err(1,2);
+err3 = err(1,3); err4 = err(1,4);
 
-% Find best x1 slump
+e1Slump = 0;
+e2Slump = 0;
 
-x_slump = zeros(k,2);
-error = zeros(k,2);
+if( err1 < err2)
+	x1Slump = stumps(1,1);
+    e1Slump = err1;
+else
+	x1Slump = stumps(1,2);
+    e1Slump = err2;
+endif
 
-x_slump(1,:) = [x1_min, x2_min];
+if( err3 < err4)
+	x2Slump = stumps(1,3);
+	e2Slump = err3;
+else
+	x2Slump = stumps(1,4);
+    e2Slump = err4;
+endif
 
-for i = 1:k
 
-	predicted_x = zeros(n,2);
-
-	% Classify
-	for j = 1:n
-		% x1
-    	if testData(j,1) < x_slump(i,1)
-		  predicted_x(j,1) = 1; 
-		else
-		  predicted_x(j,1) = 2;
-		endif
-		% x2
-    	if testData(j,2) < x_slump(i,2)
-		  predicted_x(j,2) = 1; 
-		else
-		  predicted_x(j,2) = 2;
-		endif
-
-	end 	
-
-	% Check accuracy
-    count1 = 0; count2 = 0;
-
-	for j = 1:n
-    	if predicted_x(j,1) != testData(j,3)
-			count1++;
-		endif
-
-    	if predicted_x(j,2) != testData(j,3)
-			count2++;
-		endif
-
-	end 	
-	error(i,1) = count1;
-    error(i,2) = count2;   
-
-	% Update slump
-	x_slump(i+1,1) = x_slump(i,1) + dx1;
-    x_slump(i+1,2) = x_slump(i,2) + dx2;	
-end
-
-[minx1, minloc1] = min(error(:,1) );
-[minx2, minloc2] = min(error(:,2) );
-
-x1Slump = x_slump(minloc1,1)
-x2Slump = x_slump(minloc2,2)
-
-printf("Slump x1: %f error: %d for %d training data \n", x1Slump, error(minloc1, 1), n);
-printf("Slump x2: %f error: %d for %d training data \n", x2Slump, error(minloc2, 2), n);
+printf("Slump x1: %f error: %d for %d training data \n", x1Slump, e1Slump, n);
+printf("Slump x2: %f error: %d for %d training data \n", x2Slump, e2Slump, n);
 
 % Plot train set
 figure(1);
